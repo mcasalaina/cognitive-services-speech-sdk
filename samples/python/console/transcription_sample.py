@@ -8,6 +8,7 @@ Conversation transcription samples for the Microsoft Cognitive Services Speech S
 """
 
 import time
+import os
 
 from scipy.io import wavfile
 
@@ -27,7 +28,7 @@ except ImportError:
 # Replace with your own subscription key and service region (e.g., "centralus").
 # See the limitations in supported regions,
 # https://docs.microsoft.com/azure/cognitive-services/speech-service/how-to-use-conversation-transcription
-speech_key, service_region = "YourSubscriptionKey", "YourServiceRegion"
+speech_key, service_region = os.environ.get('SPEECH_KEY'), os.environ.get('SPEECH_REGION')
 
 # This sample uses a wavfile which is captured using a supported Speech SDK devices (8 channel, 16kHz, 16-bit PCM)
 # See https://docs.microsoft.com/azure/cognitive-services/speech-service/speech-devices-sdk-microphone

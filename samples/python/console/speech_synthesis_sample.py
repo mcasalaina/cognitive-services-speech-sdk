@@ -7,6 +7,8 @@
 Speech synthesis samples for the Microsoft Cognitive Services Speech SDK
 """
 
+import os
+
 try:
     import azure.cognitiveservices.speech as speechsdk
 except ImportError:
@@ -22,7 +24,7 @@ except ImportError:
 
 # Set up the subscription info for the Speech Service:
 # Replace with your own subscription key and service region (e.g., "westus").
-speech_key, service_region = "YourSubscriptionKey", "YourServiceRegion"
+speech_key, service_region = os.environ.get('SPEECH_KEY'), os.environ.get('SPEECH_REGION')
 
 
 def speech_synthesis_to_speaker() -> None:

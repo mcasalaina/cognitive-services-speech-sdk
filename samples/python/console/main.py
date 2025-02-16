@@ -5,6 +5,7 @@
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 
 import platform
+import os
 from collections import OrderedDict
 
 import intent_sample
@@ -78,6 +79,7 @@ samples = OrderedDict([
     ])
 ])
 
+speech_key, service_region = os.environ.get('SPEECH_KEY'), os.environ.get('SPEECH_REGION')
 
 def select():
     print('select sample module, {} to abort'.format(eofkey))
