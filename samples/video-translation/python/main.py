@@ -2,6 +2,9 @@
 # Licensed under the MIT license. See LICENSE.md file in the project root for full license information.
 
 import argparse
+import json
+import dataclasses
+import uuid
 from termcolor import colored
 
 from microsoft_video_translation_client.video_translation_enum import *
@@ -23,10 +26,42 @@ def handle_create_translation_and_iteration_and_wait_until_terminated(args):
         speaker_count = args.speaker_count,
         subtitle_max_char_count_per_segment = args.subtitle_max_char_count_per_segment,
         export_subtitle_in_video = args.export_subtitle_in_video,
+        download_directory = getattr(args, 'download_directory', None)
     )
     if not success:
         return
     print(colored("success", 'green'))
+
+def handle_download_translation_results(args):
+    client = VideoTranslationClient(
+        region = args.region,
+        sub_key = args.sub_key,
+        api_version = args.api_version,
+    )
+
+    # Get the iteration
+    success, error, iteration = client.request_get_iteration(
+        translation_id = args.translation_id,
+        iteration_id = args.iteration_id,
+    )
+    if not success:
+        print(colored(f"Failed to get iteration with error: {error}", 'red'))
+        return
+    if iteration is None:
+        print(colored("Iteration not found", 'yellow'))
+        return
+    
+    # Download the results
+    success, error, downloaded_files = client.download_translation_results(iteration, args.download_directory)
+    if not success:
+        print(colored(f"Download failed: {error}", 'red'))
+        return
+    
+    print(colored("Download completed successfully", 'green'))
+    if downloaded_files:
+        print("Downloaded files:")
+        for file_type, file_path in downloaded_files.items():
+            print(f"  {file_type}: {file_path}")
 
 def handle_request_create_translation_api(args):
     client = VideoTranslationClient(
@@ -211,6 +246,7 @@ translate_parser.add_argument('--voice_kind', required = True, type=str, help='V
 translate_parser.add_argument('--speaker_count', required = False, type=int, help='Speaker count of the video, optional, auto detect if not provided.')
 translate_parser.add_argument('--subtitle_max_char_count_per_segment', required = False, type=int, help='Subtitle max char count per segment, optional.')
 translate_parser.add_argument('--export_subtitle_in_video', required = False, type=bool, help='Whether export subtitle in translated video, optional, False by default.')
+translate_parser.add_argument('--download_directory', required = False, type=str, help='Directory to automatically download translation results after completion.')
 translate_parser.set_defaults(func = handle_create_translation_and_iteration_and_wait_until_terminated)
 
 translate_parser = sub_parsers.add_parser('create_iteration_with_webvtt_and_wait_until_terminated', help='Create iteration with provided webvtt based on created translation.')
@@ -267,6 +303,12 @@ translate_parser = sub_parsers.add_parser('request_get_iteration_api', help='Req
 translate_parser.add_argument('--translation_id', required = True, type=str, help='Translation ID.')
 translate_parser.add_argument('--iteration_id', required = True, type=str, help='Iteration ID.')
 translate_parser.set_defaults(func = handle_request_get_iteration_api)
+
+download_parser = sub_parsers.add_parser('download_translation_results', help='Download all files from a completed translation iteration.')
+download_parser.add_argument('--translation_id', required = True, type=str, help='Translation ID.')
+download_parser.add_argument('--iteration_id', required = True, type=str, help='Iteration ID.')
+download_parser.add_argument('--download_directory', required = True, type=str, help='Directory to download all translation result files.')
+download_parser.set_defaults(func = handle_download_translation_results)
 
 args = root_parser.parse_args()
 args.func(args)

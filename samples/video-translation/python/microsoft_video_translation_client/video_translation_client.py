@@ -9,6 +9,9 @@ import datetime
 import locale
 import json
 import dataclasses
+import os
+from pathlib import Path
+from urllib.parse import urlparse
 from termcolor import colored
 from enum import Enum
 from datetime import datetime
@@ -62,7 +65,8 @@ class VideoTranslationClient:
         voice_kind: VoiceKind,
         speaker_count: int = None,
         subtitle_max_char_count_per_segment: int = None,
-        export_subtitle_in_video: bool = None
+        export_subtitle_in_video: bool = None,
+        download_directory: str = None
     ) -> tuple[bool, str, TranslationDefinition, IterationDefinition]:
         if video_file_url is None or source_locale is None or target_locale is None or voice_kind is None or voice_kind is None:
             raise ValueError
@@ -98,6 +102,19 @@ class VideoTranslationClient:
         print(colored("succesfully created iteration:", 'green'))
         json_formatted_str = json.dumps(dataclasses.asdict(iteration), indent = 2)
         print(json_formatted_str)
+
+        # Download files if download_directory is specified
+        if download_directory and iteration and iteration.result:
+            print(colored("\nDownloading translation results...", 'blue'))
+            download_success, download_error, downloaded_files = self.download_translation_results(iteration, download_directory)
+            if download_success:
+                print(colored(f"Files downloaded to: {download_directory}", 'green'))
+                if downloaded_files:
+                    print("Downloaded files:")
+                    for file_type, file_path in downloaded_files.items():
+                        print(f"  {file_type}: {file_path}")
+            else:
+                print(colored(f"Download failed: {download_error}", 'yellow'))
 
         return True, None, translation, iteration
     
@@ -238,6 +255,139 @@ class VideoTranslationClient:
             return False, response_iteration.translationFailureReason, None
         
         return True, None, response_iteration
+    
+    def download_file(self, url: str, download_directory: str, filename: str = None) -> tuple[bool, str, str]:
+        """
+        Download a file from URL to the specified directory.
+        
+        Args:
+            url: The URL to download from
+            download_directory: Directory to save the file
+            filename: Optional custom filename. If not provided, extracts from URL
+            
+        Returns:
+            tuple[bool, str, str]: (success, error_message, downloaded_file_path)
+        """
+        if not url:
+            return False, "URL is empty or None", None
+            
+        try:
+            # Create download directory if it doesn't exist
+            Path(download_directory).mkdir(parents=True, exist_ok=True)
+            
+            # Extract filename from URL if not provided
+            if filename is None:
+                parsed_url = urlparse(url)
+                filename = os.path.basename(parsed_url.path)
+                if not filename:
+                    # Generate a default filename with timestamp
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"downloaded_file_{timestamp}"
+            
+            # Full path for the downloaded file
+            file_path = os.path.join(download_directory, filename)
+            
+            print(f"Downloading from: {url}")
+            print(f"Saving to: {file_path}")
+            
+            # Download the file
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            
+            with open(file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            
+            print(colored(f"Successfully downloaded: {filename}", 'green'))
+            return True, None, file_path
+            
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Failed to download file from {url}: {str(e)}"
+            print(colored(error_msg, 'red'))
+            return False, error_msg, None
+        except Exception as e:
+            error_msg = f"Unexpected error downloading file: {str(e)}"
+            print(colored(error_msg, 'red'))
+            return False, error_msg, None
+    
+    def download_translation_results(self, iteration: IterationDefinition, download_directory: str) -> tuple[bool, str, dict]:
+        """
+        Download all available files from a completed translation iteration.
+        
+        Args:
+            iteration: The completed iteration containing result URLs
+            download_directory: Directory to save all files
+            
+        Returns:
+            tuple[bool, str, dict]: (success, error_message, downloaded_files_dict)
+        """
+        if not iteration or not iteration.result:
+            return False, "No iteration result available", None
+            
+        downloaded_files = {}
+        failed_downloads = []
+        
+        result = iteration.result
+        
+        # Download translated video
+        if result.translatedVideoFileUrl:
+            success, error, file_path = self.download_file(
+                result.translatedVideoFileUrl, 
+                download_directory, 
+                f"translated_video_{iteration.id}.mp4"
+            )
+            if success:
+                downloaded_files['translated_video'] = file_path
+            else:
+                failed_downloads.append(f"Translated video: {error}")
+        
+        # Download source locale subtitles
+        if result.sourceLocaleSubtitleWebvttFileUrl:
+            success, error, file_path = self.download_file(
+                result.sourceLocaleSubtitleWebvttFileUrl, 
+                download_directory, 
+                f"source_subtitles_{iteration.id}.vtt"
+            )
+            if success:
+                downloaded_files['source_subtitles'] = file_path
+            else:
+                failed_downloads.append(f"Source subtitles: {error}")
+        
+        # Download target locale subtitles
+        if result.targetLocaleSubtitleWebvttFileUrl:
+            success, error, file_path = self.download_file(
+                result.targetLocaleSubtitleWebvttFileUrl, 
+                download_directory, 
+                f"target_subtitles_{iteration.id}.vtt"
+            )
+            if success:
+                downloaded_files['target_subtitles'] = file_path
+            else:
+                failed_downloads.append(f"Target subtitles: {error}")
+        
+        # Download metadata JSON
+        if result.metadataJsonWebvttFileUrl:
+            success, error, file_path = self.download_file(
+                result.metadataJsonWebvttFileUrl, 
+                download_directory, 
+                f"metadata_{iteration.id}.json"
+            )
+            if success:
+                downloaded_files['metadata'] = file_path
+            else:
+                failed_downloads.append(f"Metadata JSON: {error}")
+        
+        if failed_downloads:
+            error_msg = "Some downloads failed: " + "; ".join(failed_downloads)
+            print(colored(error_msg, 'yellow'))
+            return len(downloaded_files) > 0, error_msg, downloaded_files
+        
+        if downloaded_files:
+            print(colored(f"Successfully downloaded {len(downloaded_files)} files to {download_directory}", 'green'))
+            return True, None, downloaded_files
+        else:
+            return False, "No files were available to download", None
     
     def build_translations_path(self) -> str:
         return f"{self.URL_PATH_ROOT}/{self.URL_SEGMENT_NAME_TRANSLATIONS}"
