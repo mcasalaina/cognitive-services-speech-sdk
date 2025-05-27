@@ -50,9 +50,12 @@ def handle_download_translation_results(args):
     if iteration is None:
         print(colored("Iteration not found", 'yellow'))
         return
-    
-    # Download the results
-    success, error, downloaded_files = client.download_translation_results(iteration, args.download_directory)
+      # Download the results
+    success, error, downloaded_files = client.download_translation_results(
+        iteration, 
+        args.download_directory,
+        args.translation_id
+    )
     if not success:
         print(colored(f"Download failed: {error}", 'red'))
         return

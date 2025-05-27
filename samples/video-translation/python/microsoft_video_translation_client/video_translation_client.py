@@ -106,7 +106,11 @@ class VideoTranslationClient:
         # Download files if download_directory is specified
         if download_directory and iteration and iteration.result:
             print(colored("\nDownloading translation results...", 'blue'))
-            download_success, download_error, downloaded_files = self.download_translation_results(iteration, download_directory)
+            download_success, download_error, downloaded_files = self.download_translation_results(
+                iteration, 
+                download_directory,
+                translation_id
+            )
             if download_success:
                 print(colored(f"Files downloaded to: {download_directory}", 'green'))
                 if downloaded_files:
@@ -311,13 +315,14 @@ class VideoTranslationClient:
             print(colored(error_msg, 'red'))
             return False, error_msg, None
     
-    def download_translation_results(self, iteration: IterationDefinition, download_directory: str) -> tuple[bool, str, dict]:
+    def download_translation_results(self, iteration: IterationDefinition, download_directory: str, translation_id: str = None) -> tuple[bool, str, dict]:
         """
-        Download all available files from a completed translation iteration.
+        Download MP4 file from a completed translation iteration with custom naming.
         
         Args:
             iteration: The completed iteration containing result URLs
             download_directory: Directory to save all files
+            translation_id: Optional translation ID to fetch original filename and target language
             
         Returns:
             tuple[bool, str, dict]: (success, error_message, downloaded_files_dict)
@@ -330,53 +335,42 @@ class VideoTranslationClient:
         
         result = iteration.result
         
-        # Download translated video
+        # Get original filename and target language if translation_id is provided
+        original_filename = "translated_video"
+        target_language = "unknown"
+        
+        if translation_id:
+            success, error, translation = self.request_get_translation(translation_id)
+            if success and translation and translation.input:
+                # Extract original filename from video URL
+                if translation.input.videoFileUrl:
+                    parsed_url = urlparse(translation.input.videoFileUrl)
+                    filename_with_extension = os.path.basename(parsed_url.path)
+                    if filename_with_extension:
+                        # Remove file extension to get base name
+                        original_filename = os.path.splitext(filename_with_extension)[0]
+                
+                # Get target language
+                if hasattr(translation.input, 'targetLocale') and translation.input.targetLocale:
+                    target_language = str(translation.input.targetLocale)
+        
+        # Download only the translated video MP4 file
         if result.translatedVideoFileUrl:
+            # Create new filename: "Original Filename - Language.mp4"
+            new_filename = f"{original_filename} - {target_language}.mp4"
+            
             success, error, file_path = self.download_file(
                 result.translatedVideoFileUrl, 
                 download_directory, 
-                f"translated_video_{iteration.id}.mp4"
+                new_filename
             )
             if success:
                 downloaded_files['translated_video'] = file_path
+                print(colored(f"Successfully downloaded MP4 as: {new_filename}", 'green'))
             else:
                 failed_downloads.append(f"Translated video: {error}")
-        
-        # Download source locale subtitles
-        if result.sourceLocaleSubtitleWebvttFileUrl:
-            success, error, file_path = self.download_file(
-                result.sourceLocaleSubtitleWebvttFileUrl, 
-                download_directory, 
-                f"source_subtitles_{iteration.id}.vtt"
-            )
-            if success:
-                downloaded_files['source_subtitles'] = file_path
-            else:
-                failed_downloads.append(f"Source subtitles: {error}")
-        
-        # Download target locale subtitles
-        if result.targetLocaleSubtitleWebvttFileUrl:
-            success, error, file_path = self.download_file(
-                result.targetLocaleSubtitleWebvttFileUrl, 
-                download_directory, 
-                f"target_subtitles_{iteration.id}.vtt"
-            )
-            if success:
-                downloaded_files['target_subtitles'] = file_path
-            else:
-                failed_downloads.append(f"Target subtitles: {error}")
-        
-        # Download metadata JSON
-        if result.metadataJsonWebvttFileUrl:
-            success, error, file_path = self.download_file(
-                result.metadataJsonWebvttFileUrl, 
-                download_directory, 
-                f"metadata_{iteration.id}.json"
-            )
-            if success:
-                downloaded_files['metadata'] = file_path
-            else:
-                failed_downloads.append(f"Metadata JSON: {error}")
+        else:
+            failed_downloads.append("No translated video URL available")
         
         if failed_downloads:
             error_msg = "Some downloads failed: " + "; ".join(failed_downloads)
