@@ -32,6 +32,7 @@ class TranslationInputDefinition(TranslationInputBaseDefinition):
     sourceLocale: locale
     targetLocale: locale
     voiceKind: VoiceKind
+    enableLipSync: Optional[bool] = None
 
 @dataclass(kw_only=True)
 class StatelessResourceBaseDefinition():

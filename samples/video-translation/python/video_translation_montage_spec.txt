@@ -1,0 +1,21 @@
+You are going to make a video translation montage using Azure AI Speech services. Use the Microsoft Docs MCP server to look up information on how to use it. Write a python file that does the following, and then run that python file. Use ffmpeg-python to make the video cuts and edits. pip install that if necessary. ffmpeg itself is already installed.
+
+Take the video file at "C:\Users\mcasalaina\OneDrive - Microsoft\Videos\Video Translator\Peter Sanderson Simcorp\Peter AI recording V1 - w subtitles.mp4" and chop it into segments. 
+
+For each segment, run it through Azure AI Video Translator with Lip Sync turned on, 1 speaker, and a source language of en-US. Translate it as follows:
+
+0:00-0:08.500 - Do not translate, use the original video segment for this
+0:08.501-0:20 - Translate to Danish
+0:20-0:31 - Translate to Spanish
+0:31-0:44 - Translate to Chinese
+0:44-0:53 - Translate to Japanese
+0:53-1:02 - Translate to French
+1:02-1:09 - Translate to German
+1:09-1:18 - Translate to Dutch
+1:18-1:21 - Do not translate, use the original video segment for this
+
+Make sure there is no overlap between the segments.
+
+Once each translated video is made, make an overlay of text 100px from the top of the video and 100px from the right edge of the video indicating what language it is (so the Danish translation should say nothing other than "Danish"). This text should be in a white, bold Arial Black font, on top of an 80% transparent black box.
+
+Then stitch all the videos back together in order and name the resulting video the same as the original video with but with the word TRANSLATED prepended to the filename.

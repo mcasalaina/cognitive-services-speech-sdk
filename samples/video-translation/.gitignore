@@ -1,2 +1,5 @@
 # to avoid check in launch.json due to it contains sub keys.
 launch.json
+
+# Video translation montage work directory
+python/montage_work/

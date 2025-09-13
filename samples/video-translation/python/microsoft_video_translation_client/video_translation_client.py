@@ -66,6 +66,7 @@ class VideoTranslationClient:
         speaker_count: int = None,
         subtitle_max_char_count_per_segment: int = None,
         export_subtitle_in_video: bool = None,
+        enable_lip_sync: bool = None,
         download_directory: str = None
     ) -> tuple[bool, str, TranslationDefinition, IterationDefinition]:
         if video_file_url is None or source_locale is None or target_locale is None or voice_kind is None or voice_kind is None:
@@ -80,6 +81,7 @@ class VideoTranslationClient:
             source_locale = source_locale,
             target_locale = target_locale,
             voice_kind = voice_kind,
+            enable_lip_sync = enable_lip_sync,
         )
         if not success:
             return False, error, None, None
@@ -167,6 +169,7 @@ class VideoTranslationClient:
         source_locale: locale,
         target_locale: locale,
         voice_kind: VoiceKind,
+        enable_lip_sync: bool = None,
     ) -> tuple[bool, str, TranslationDefinition]:
         operation_id = str(uuid.uuid4())
         success, error, response_translation, operation_location = self.request_create_translation(
@@ -178,6 +181,7 @@ class VideoTranslationClient:
             speaker_count = None,
             subtitle_max_char_count_per_segment = None,
             export_subtitle_in_video = None,
+            enable_lip_sync = enable_lip_sync,
             translation_display_name = None,
             translation_description = None,
             operation_id = operation_id)
@@ -602,6 +606,7 @@ class VideoTranslationClient:
             speaker_count: int = None,
             subtitle_max_char_count_per_segment: int = None,
             export_subtitle_in_video: bool = None,
+            enable_lip_sync: bool = None,
             translation_display_name: str = None,
             translation_description: str = None,
             operation_id: str = None,
@@ -617,7 +622,11 @@ class VideoTranslationClient:
             speakerCount =speaker_count,
             subtitleMaxCharCountPerSegment = subtitle_max_char_count_per_segment,
             exportSubtitleInVideo = export_subtitle_in_video,
+            enableLipSync = enable_lip_sync,
         )
+          # If no display name provided, generate a default one with file extension
+        if translation_display_name is None or translation_display_name.strip() == "":
+            translation_display_name = f"Translation_{translation_id}.mp4"
         
         translation_create_body = TranslationDefinition(
             input = translation_create_input_body,
