@@ -333,3 +333,6 @@ samples/js/**/microsoft.cognitiveservices.speech.sdk.bundle*.js*
 # iOS framework
 samples/objective-c/ios/MicrosoftCognitiveServicesSpeech.framework/
 .vscode/settings.json
+WARP.md
+samples/video-translation/.env
+samples/.vscode/settings.json

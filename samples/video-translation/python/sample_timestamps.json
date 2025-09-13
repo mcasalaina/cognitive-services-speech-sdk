@@ -1,0 +1,45 @@
+[
+  {
+    "start": "00:00",
+    "translate": "no"
+  },
+  {
+    "start": "00:08",
+    "language": "Danish",
+    "translate": "yes"
+  },
+  {
+    "start": "00:20",
+    "language": "Spanish",
+    "translate": "yes"
+  },
+  {
+    "start": "00:31",
+    "language": "Chinese",
+    "translate": "yes"
+  },
+  {
+    "start": "00:44",
+    "language": "Japanese",
+    "translate": "yes"
+  },
+  {
+    "start": "00:53",
+    "language": "French",
+    "translate": "yes"
+  },
+  {
+    "start": "01:02",
+    "language": "German",
+    "translate": "yes"
+  },
+  {
+    "start": "01:09",
+    "language": "Dutch",
+    "translate": "yes"
+  },
+  {
+    "start": "01:18",
+    "translate": "no"
+  }
+]
