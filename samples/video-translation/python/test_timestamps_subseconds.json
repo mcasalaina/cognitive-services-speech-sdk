@@ -1,0 +1,25 @@
+[
+  {
+    "start": "00:00",
+    "translate": "no"
+  },
+  {
+    "start": "00:02.500",
+    "language": "German",
+    "translate": "yes"
+  },
+  {
+    "start": "00:06.750",
+    "language": "Hungarian", 
+    "translate": "yes"
+  },
+  {
+    "start": "00:10.125",
+    "language": "French",
+    "translate": "yes"
+  },
+  {
+    "start": "00:15",
+    "translate": "no"
+  }
+]

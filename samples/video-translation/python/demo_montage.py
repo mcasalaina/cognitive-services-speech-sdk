@@ -240,17 +240,35 @@ def load_timestamps(timestamp_file):
     return segments
 
 def time_to_seconds(time_str):
-    """Convert time string (MM:SS) to seconds"""
+    """Convert time string (MM:SS or MM:SS.mmm) to seconds"""
     parts = time_str.split(":")
     minutes = int(parts[0])
-    seconds = int(parts[1])
-    return minutes * 60 + seconds
+    
+    # Handle subseconds if present
+    if "." in parts[1]:
+        second_parts = parts[1].split(".")
+        seconds = int(second_parts[0])
+        subseconds = float("0." + second_parts[1])
+    else:
+        seconds = int(parts[1])
+        subseconds = 0.0
+    
+    return minutes * 60 + seconds + subseconds
 
 def seconds_to_time(seconds):
-    """Convert seconds to time string (MM:SS)"""
+    """Convert seconds to time string (MM:SS.mmm)"""
     minutes = int(seconds // 60)
-    secs = int(seconds % 60)
-    return f"{minutes:02d}:{secs:02d}"
+    remaining_seconds = seconds % 60
+    
+    # Extract integer seconds and fractional part
+    secs = int(remaining_seconds)
+    subseconds = remaining_seconds - secs
+    
+    # Format with subseconds if there's a fractional part
+    if subseconds > 0:
+        return f"{minutes:02d}:{secs:02d}.{int(subseconds * 1000):03d}"
+    else:
+        return f"{minutes:02d}:{secs:02d}"
 
 def create_demo_montage(source_video, output_path, segments):
     """Create a demo montage using original segments with overlay labels to show the structure"""
